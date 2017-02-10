@@ -1,4 +1,4 @@
-This project was inspired by my friend Big Nick, who is a Duke fan because he sucks (and maybe partly because he went to there.)  
+This project was inspired by my friend Big Nick, who is a Duke fan because he sucks (and maybe partly because he went there.)  
 
 Big Nick loves to show me the website diddukewin.com, everytime duke basketball wins. I went to Virginia, so this is absurdly irritating.  I wanted to pay him back for this, but unfortunately the domain name diduvawin.com was taken, so I had to get creative.
 

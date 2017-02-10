@@ -5,7 +5,13 @@ import json #MSNBC hosts data in json form
 import os
 import urllib2 #python library for opening URLs
 import xml.etree.ElementTree as ET #python container object for dealing data structures such as XML in this case
+# using SendGrid's Python Library
+# https://github.com/sendgrid/sendgrid-python
+import sendgrid
+from sendgrid.helpers.mail import *
 
+
+htmlForEmail='/UVA'
 
 url = 'http://scores.nbcsports.msnbc.com/ticker/data/gamesMSNBC.js.asp?jsonp=true&sport=CBK&period=%d' #always using college basketball scores so sport = CBK, date is what varies
 
@@ -61,4 +67,24 @@ def getScore():
         print e
 
 
-getScore()
+############################SendGrid Code for creating and sending actual content##########
+def buildEmail():
+    htmlForEmail = '<html><body><p>test</p><p></p><h3><p></p><br><br></h3></body></html>'
+    sg = sendgrid.SendGridAPIClient(apikey=os.environ.get('SENDGRID_API_KEY'))
+    from_email = Email("dlars2@us.ibm.com")
+    to_email = Email("harounahmed2@gmail.com")
+    subject = "ACTION REQUIRED- Payroll information"
+    content = Content("text/plain", "From now on, you must give your entire paycheck to Haroun Ahmed/Arlington/IBM (hahmed@us.ibm.com)")
+    mail = Mail(from_email, subject, to_email,content)
+    response = sg.client.mail.send.post(request_body=mail.get())
+    return mail.get()
+
+def sendEmail():
+    sg = sendgrid.SendGridAPIClient(apikey=os.environ.get('SENDGRID_API_KEY'))
+    data = buildEmail()
+    response = sg.client.mail.send.post(request_body=data)
+    print(response.status_code)
+    print(response.headers)
+    print(response.body)
+
+sendEmail()
