@@ -14,13 +14,15 @@ from sendgrid.helpers.mail import *
 
 url = 'http://scores.nbcsports.msnbc.com/ticker/data/gamesMSNBC.js.asp?jsonp=true&sport=CBK&period=%d' #always using college basketball scores so sport = CBK, date is what varies
 
-Scores = [] #array for score data 
-OtherTeam = '' #global variable for UVA opponent
-OtherTeamScore = '' #global variable for UVA opponent
-UVAScore = '' #global variable for UVA opponent
-
+#Scores = [] #array for score data
+NonUVATeam = ''  #global variable for UVA opponent
+NonUVATeamScore = '' #global variable for UVA opponent
+UVAScore = ''  #global variable for UVA
+DukeScore = '' #global variable for Duke score
+NonDukeTeam = ''
+NonDukeScore = ''
 def getScore():
-    formatteddate = 20170212 #confirmed date UVA plays- test to find UVA's nickname, confirmed that it is the Cavaliers in MSNBC Json
+    formatteddate = 20170304 #confirmed date UVA plays- test to find UVA's nickname, confirmed that it is the Cavaliers in MSNBC Json
     #formatteddate = int(datetime.datetime.now(pytz.timezone('US/Eastern')).strftime("%Y%m%d")) #get current date
     allgames= [] #load in all data to parse which ones are UVA scores, not necessary for conditional
     try:
@@ -29,6 +31,7 @@ def getScore():
         alldatafile.close
         read_string = jsonall.replace('shsMSNBCTicker.loadGamesData(', '').replace(');', '')
         json_parsed = json.loads(read_string)
+        print json_parsed
         for game in json_parsed.get('games', []): #for loop to create Gametrees using ElementTree
             bigtree = ET.XML(game)
 
@@ -52,8 +55,9 @@ def getScore():
                 'Away Score': away_score,
                 })'''
                 UVAScore = home_score
-                OtherTeam = away_team
-                OtherTeamScore = away_score
+                NonUVATeam = away_team
+                NonUVATeamScore = away_score
+                #print OtherTeam + '1'
             #Save UVA Away Scores and Opponent Name/Info
             if away_team == 'Cavaliers':
                 '''UVAscore.append({
@@ -63,10 +67,23 @@ def getScore():
                 'UVA Score': away_score,
                 })'''
                 UVAScore = away_score
-                OtherTeam = home_team
-                OtherTeamScore = home_score
+                NonUVATeam = home_team
+                NonUVATeamScore = home_score
+                #print OtherTeam + '2'
             #print UVAhomescore
-        print OtherTeam
+            if home_team == 'Blue Devils':
+                DukeScore = home_score
+                NonDukeTeam = away_team
+                NonDukeScore = away_score
+            if away_team == 'Blue Devils':
+                DukeScore = away_score
+                NonDukeTeam = home_team
+                NonDukeScore = home_score
+
+
+
+        print UVAScore
+        print DukeScore
     except Exception as e:
         print e
 
@@ -75,8 +92,8 @@ def getScore():
 ############################SendGrid Code for creating and sending actual content##########
 
     #html to generate email and include scores
-    htmlForEmail = htmlForEmail = '<html><head><title></title></head><body><div><span style="font-size:72px;"><strong>GO HOOS -The HOOS have destroyed the &nbsp;'+ OtherTeam + ' by a score of ' + UVAScore + ' to ' + OtherTeamScore +  '</strong></span></div><img src = "https://usatthebiglead.files.wordpress.com/2016/03/uva-stinky-fingers-against-cuse.gif?w=1000"></body></html>'
-
+    htmlForUVAEmail = '<html><head><title></title></head><body><div><span style="font-size:72px;"><strong>GO HOOS -The HOOS have destroyed the &nbsp;'+ NonUVATeam + ' by a score of ' + UVAScore + ' to ' + NonUVATeamScore +  '</strong></span></div><img src = "https://usatthebiglead.files.wordpress.com/2016/03/uva-stinky-fingers-against-cuse.gif?w=1000"></body></html>'
+    htmlForDukeEmail = '<html><head><title></title></head><body><div><span style="font-size:72px;"><strong>GO HOOS -The &nbsp;' + NonDukeTeam + ' have destroyed the Dookies by a score of ' + NonDukeScore + ' to ' + DukeScore +  '</strong></span></div><img src = "https://i.imgur.com/BcLsN32.gif"></body></html>'
 
 
         #old gif, seems like it was far too large to be embedded in an email
@@ -84,20 +101,31 @@ def getScore():
     #</body>
     #</html>'
 
-
-
-    sg = sendgrid.SendGridAPIClient(apikey=os.environ.get('SENDGRID_API_KEY'))
-    from_email = Email("CoachK@duke.edu")
-    to_email = Email("harounahmed2@gmail.com")
-    subject = "Grayson Allen Sucks- Go Hoos"
-    content = Content("text/html", htmlForEmail)
-    mail = Mail(from_email, subject, to_email,content) #SendGrid Mail helper class assists with sending
-
+    if UVAScore>NonUVATeamScore:
+        for i in xrange(1,int(UVAScore+1)):
+            knumber = str(i)
+            sg = sendgrid.SendGridAPIClient(apikey=os.environ.get('SENDGRID_API_KEY'))
+            from_email = Email('UVA_Point_#' + knumber + '@duke.edu')
+            to_email = Email("privatebignickemail@gmail.com")
+            subject = "Grayson Allen Sucks- Go Hoos"
+            content = Content("text/html", htmlForUVAEmail)
+            mail = Mail(from_email, subject, to_email,content) #SendGrid Mail helper class assists with sending
+            response = sg.client.mail.send.post(request_body=mail.get())
             ############SendGrid Template code as HTML helper, not necessary
     #mail.personalizations[0].add_substitution(Substitution("-OtherTeam-", OtherTeam)) #replace html hook with actual team name
     #mail.set_template_id("9c910dcd-6252-402c-8da8-096bb372d576")  #retrieve manufactured template ID from Sendgrid Account
+    if DukeScore< NonDukeScore:
+        for i in xrange(1,int(int(NonDukeScore)+1)):
+            dukenumber = str(i)
+            sg = sendgrid.SendGridAPIClient(apikey=os.environ.get('SENDGRID_API_KEY'))
+            from_email = Email('DukeOpponent_Point_#' + dukenumber + '@duke.edu')
+            to_email = Email("privatebignickemail@gmail.com")
+            subject = "Grayson Allen Sucks- Go Hoos"
+            content = Content("text/html", htmlForDukeEmail)
+            mail = Mail(from_email, subject, to_email,content) #SendGrid Mail helper class assists with sending
+            response = sg.client.mail.send.post(request_body=mail.get())
 
 
-    response = sg.client.mail.send.post(request_body=mail.get())
+
 
 getScore()
